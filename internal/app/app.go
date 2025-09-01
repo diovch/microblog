@@ -26,6 +26,7 @@ func Run(cfg *config.Config) {
 	r.HandleFunc("/posts", handlers.GetFeedHandler).Methods(http.MethodGet)
 	r.HandleFunc("/posts/{id}/like", handlers.LikePostHandler).Methods(http.MethodGet)
 
+	// FAQ: Should httpServer be in other package?
 	srv := &http.Server{
 		Addr:    ":" + string(rune(cfg.HTTP.Port)),
 		Handler: r,
@@ -51,4 +52,5 @@ func Run(cfg *config.Config) {
 	if err := srv.Shutdown(ctx); err != nil {
 		l.LogError(fmt.Sprint("app - Run - httpServer.Shutdown: %w", err))
 	}
+	l.LogInfo("Shutting down gracefully")
 }
