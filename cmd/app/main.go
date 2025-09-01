@@ -13,7 +13,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := app.Run(cfg); err != nil {
-		log.Fatal(err)
-	}
+	app.Run(cfg)
 }
