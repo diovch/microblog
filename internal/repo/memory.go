@@ -29,14 +29,15 @@ func NewMemoryRepo() *MemoryRepo {
 	}
 }
 
-func (r *MemoryRepo) CreateUser(user *entity.User) error {
+func (r *MemoryRepo) CreateUser(username string) error {
 	r.userMutex.Lock()
 	defer r.userMutex.Unlock()
 
-	if _, exists := r.users[user.Username]; exists {
+	if _, exists := r.users[username]; exists {
 		return errors.New("username already exists")
 	}
 
+	user := entity.NewUser(username)
 	r.nextUserID++
 	user.ID = r.nextUserID
 	r.users[user.Username] = user
@@ -56,10 +57,11 @@ func (r *MemoryRepo) GetUserByUsername(username string) (*entity.User, error) {
 	return user, nil
 }
 
-func (r *MemoryRepo) CreatePost(post *entity.Post) (int64, error) {
+func (r *MemoryRepo) CreatePost(content string, authorUsername string) (int64, error) {
 	r.postMutex.Lock()
 	defer r.postMutex.Unlock()
 
+	post := entity.NewPost(content, authorUsername)
 	r.nextPostID++
 	post.ID = r.nextPostID
 	r.posts = append(r.posts, post)
@@ -67,12 +69,14 @@ func (r *MemoryRepo) CreatePost(post *entity.Post) (int64, error) {
 	return post.ID, nil
 }
 
-func (r *MemoryRepo) GetAllPosts(id int64) []*entity.Post {
+
+func (r *MemoryRepo) GetAllPosts() []*entity.Post {
 	r.postMutex.RLock()
 	defer r.postMutex.RUnlock()
 
 	return r.posts[:]
 }
+
 
 func (r *MemoryRepo) LikePost(id int64, username string) error {
 	r.postMutex.RLock()
@@ -87,6 +91,6 @@ func (r *MemoryRepo) LikePost(id int64, username string) error {
 	}
 
 	post := r.posts[id-1]
-	post.Likes = append(post.Likes, username)
+	post.Like(username)
 	return nil
 }
