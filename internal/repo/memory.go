@@ -14,8 +14,8 @@ type MemoryRepo struct {
 	nextUserID int64
 	nextPostID int64
 
-	userMutex *sync.Mutex
-	postMutex *sync.Mutex
+	userMutex *sync.RWMutex
+	postMutex *sync.RWMutex
 }
 
 func NewMemoryRepo() *MemoryRepo {
@@ -24,8 +24,8 @@ func NewMemoryRepo() *MemoryRepo {
 		posts:      make([]*entity.Post, 0),
 		nextUserID: 0,
 		nextPostID: 0,
-		userMutex:  &sync.Mutex{},
-		postMutex:  &sync.Mutex{},
+		userMutex:  &sync.RWMutex{},
+		postMutex:  &sync.RWMutex{},
 	}
 }
 
@@ -45,8 +45,8 @@ func (r *MemoryRepo) CreateUser(user *entity.User) error {
 }
 
 func (r *MemoryRepo) GetUserByUsername(username string) (*entity.User, error) {
-	r.userMutex.Lock()
-	defer r.userMutex.Unlock()
+	r.userMutex.RLock()
+	defer r.userMutex.RUnlock()
 
 	user, exists := r.users[username]
 	if !exists {
@@ -68,25 +68,25 @@ func (r *MemoryRepo) CreatePost(post *entity.Post) (int64, error) {
 }
 
 func (r *MemoryRepo) GetAllPosts(id int64) []*entity.Post {
-	r.postMutex.Lock()
-	defer r.postMutex.Unlock()
+	r.postMutex.RLock()
+	defer r.postMutex.RUnlock()
 
-	res := make([]*entity.Post, 0, len(r.posts))
-	copy(res, r.posts)
-
-	return res
+	return r.posts[:]
 }
 
 func (r *MemoryRepo) LikePost(id int64, username string) error {
-	r.postMutex.Lock()
-	defer r.postMutex.Unlock()
+	r.postMutex.RLock()
+	defer r.postMutex.RUnlock()
 
-	for _, post := range r.posts {
-		if post.ID == id {
-			post.Likes = append(post.Likes, username)
-			return nil
-		}
+	if id <= 0 || id > r.nextPostID {
+		return errors.New("id is not valid")
 	}
 
-	return errors.New("post not found")
+	if r.posts[id-1].ID != id {
+		return errors.New("post not found")
+	}
+
+	post := r.posts[id-1]
+	post.Likes = append(post.Likes, username)
+	return nil
 }
