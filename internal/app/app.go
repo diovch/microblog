@@ -13,6 +13,7 @@ import (
 	"github.com/diovch/microblog/config"
 	"github.com/diovch/microblog/internal/handlers"
 	"github.com/diovch/microblog/internal/logger"
+	"github.com/diovch/microblog/internal/repo"
 	"github.com/gorilla/mux"
 )
 
@@ -20,11 +21,15 @@ func Run(cfg *config.Config) {
 	l := logger.NewLogger(100)
 	defer l.Close()
 
+	memDb := repo.NewMemoryRepo()
+	userHandler := handlers.NewUserHandler(memDb)
+	postHandler := handlers.NewPostHandler(memDb)
+
 	r := mux.NewRouter()
-	r.HandleFunc("/register", handlers.RegisterHandler).Methods(http.MethodPost)
-	r.HandleFunc("/posts", handlers.CreatePostHandler).Methods(http.MethodPost)
-	r.HandleFunc("/posts", handlers.GetFeedHandler).Methods(http.MethodGet)
-	r.HandleFunc("/posts/{id}/like", handlers.LikePostHandler).Methods(http.MethodGet)
+	r.HandleFunc("/register", userHandler.RegisterHandler).Methods(http.MethodPost)
+	r.HandleFunc("/posts", postHandler.CreatePostHandler).Methods(http.MethodPost)
+	r.HandleFunc("/posts", postHandler.GetFeedHandler).Methods(http.MethodGet)
+	r.HandleFunc("/posts/{id}/like", postHandler.LikePostHandler).Methods(http.MethodGet)
 
 	// FAQ: Should httpServer be in other package?
 	srv := &http.Server{
