@@ -1,11 +1,27 @@
 package service
 
-type AsyncService struct {}
+import "runtime"
 
-func NewAsyncService() *AsyncService {
-	return &AsyncService{}
+type WorkerPool struct {
+	tasks chan func()
 }
 
-func (a *AsyncService) RunAsync(task func()) {
-	go task()
+func NewWorkerPool() *WorkerPool {
+	wp := &WorkerPool{
+		tasks: make(chan func()),
+	}
+
+	for range runtime.GOMAXPROCS(-1) - 2{
+		go func() {
+			for task := range wp.tasks {
+				task()
+			}
+		}()
+	}
+
+	return wp
+}
+
+func (w *WorkerPool) RunAsync(task func()) {
+	w.tasks <- task
 }

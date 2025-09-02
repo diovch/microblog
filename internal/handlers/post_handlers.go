@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/diovch/microblog/internal/entity"
+	"github.com/diovch/microblog/internal/logger"
 	"github.com/diovch/microblog/internal/repo"
 	"github.com/diovch/microblog/internal/service"
 	"github.com/gorilla/mux"
@@ -13,12 +14,16 @@ import (
 
 type PostHandler struct {
 	r repo.Repository
+	wp *service.WorkerPool
+	l *logger.Logger
 	validator
 }
 
-func NewPostHandler(r repo.Repository) *PostHandler {
+func NewPostHandler(r repo.Repository, wp *service.WorkerPool, l *logger.Logger) *PostHandler {
 	return &PostHandler{
 		r: r,
+		wp: wp,
+		l: l,
 	}
 }
 
@@ -43,6 +48,7 @@ func (p *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdPost)
+	p.l.LogInfo("Post created successfully")
 }
 
 func (p *PostHandler) GetFeedHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +56,7 @@ func (p *PostHandler) GetFeedHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
+	p.l.LogInfo("Feed retrieved successfully")
 }
 
 func (p *PostHandler) LikePostHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,8 +82,9 @@ func (p *PostHandler) LikePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	asyncWorker := service.NewAsyncService()
-	asyncWorker.RunAsync(func() {
+	p.wp.RunAsync(func() {
 		p.r.LikePost(int64(id), user.Username)
+		p.l.LogInfo("Post liked by " + user.Username)
 	})
+	p.l.LogInfo("Post like initiated successfully")
 }

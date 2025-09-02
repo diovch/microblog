@@ -5,17 +5,20 @@ import (
 	"net/http"
 
 	"github.com/diovch/microblog/internal/entity"
+	"github.com/diovch/microblog/internal/logger"
 	"github.com/diovch/microblog/internal/repo"
 )
 
 type UserHandler struct {
 	r repo.Repository
+	l *logger.Logger
 	validator
 }
 
-func NewUserHandler(r repo.Repository) *UserHandler {
+func NewUserHandler(r repo.Repository, l *logger.Logger) *UserHandler {
 	return &UserHandler{
 		r: r,
+		l: l,
 	}
 }
 
@@ -41,4 +44,5 @@ func (u *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("User created successfully"))
+	u.l.LogInfo("User " + user.Username + " registered successfully")
 }
