@@ -14,6 +14,7 @@ import (
 	"github.com/diovch/microblog/internal/handlers"
 	"github.com/diovch/microblog/internal/logger"
 	"github.com/diovch/microblog/internal/repo"
+	"github.com/diovch/microblog/internal/service"
 	"github.com/gorilla/mux"
 )
 
@@ -22,9 +23,9 @@ func Run(cfg *config.Config) {
 	defer l.Close()
 
 	memDb := repo.NewMemoryRepo()
-	
+
 	userHandler := handlers.NewUserHandler(memDb, l)
-	postHandler := handlers.NewPostHandler(memDb, l)
+	postHandler := handlers.NewPostHandler(memDb, service.NewWorkerPool(), l)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/register", userHandler.RegisterHandler).Methods(http.MethodPost)
