@@ -43,7 +43,10 @@ func (p *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p *PostHandler) GetFeedHandler(w http.ResponseWriter, r *http.Request) {
+	posts := p.r.GetAllPosts()
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
 }
 
 func (p *PostHandler) LikePostHandler(w http.ResponseWriter, r *http.Request) {
