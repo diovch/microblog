@@ -3,9 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/diovch/microblog/internal/entity"
 	"github.com/diovch/microblog/internal/repo"
+	"github.com/diovch/microblog/internal/service"
+	"github.com/gorilla/mux"
 )
 
 type PostHandler struct {
@@ -50,5 +53,30 @@ func (p *PostHandler) GetFeedHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PostHandler) LikePostHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	if err := p.ValidateJsonContentType(r); err != nil {
+		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+		return
+	}
 
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+    
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        http.Error(w, "Invalid ID format", http.StatusBadRequest)
+        return
+    }
+
+	var user entity.User
+	err = json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	asyncWorker := service.NewAsyncService()
+	asyncWorker.RunAsync(func() {
+		p.r.LikePost(int64(id), user.Username)
+	})
 }
