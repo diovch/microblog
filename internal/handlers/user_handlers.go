@@ -10,6 +10,7 @@ import (
 
 type UserHandler struct {
 	r repo.Repository
+	validator
 }
 
 func NewUserHandler(r repo.Repository) *UserHandler {
@@ -20,10 +21,9 @@ func NewUserHandler(r repo.Repository) *UserHandler {
 
 func (u *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	content_type := r.Header.Get("Content-Type")
 
-	if content_type != "application/json" {
-		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+	if err := u.ValidateJsonContentType(r); err != nil {
+		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 		return
 	}
 
