@@ -8,7 +8,7 @@ type Repository interface {
 	GetUserByUsername(username string) (*entity.User, error)
 
 	// Post methods
-	CreatePost(content string, authorUsername string) (int64, error)
+	CreatePost(content, authorUsername string) (int64, error)
 	GetAllPosts() ([]*entity.Post)
 	LikePost(id int64, username string) error
 }
