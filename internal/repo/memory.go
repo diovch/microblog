@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"slices"
 	"sync"
 
 	"github.com/diovch/microblog/internal/entity"
@@ -69,7 +70,6 @@ func (r *MemoryRepo) CreatePost(content string, authorUsername string) (int64, e
 	return post.ID, nil
 }
 
-
 func (r *MemoryRepo) GetAllPosts() []*entity.Post {
 	r.postMutex.RLock()
 	defer r.postMutex.RUnlock()
@@ -77,17 +77,24 @@ func (r *MemoryRepo) GetAllPosts() []*entity.Post {
 	return r.posts[:]
 }
 
-
 func (r *MemoryRepo) LikePost(id int64, username string) error {
 	r.postMutex.RLock()
 	defer r.postMutex.RUnlock()
 
 	if id <= 0 || id > r.nextPostID {
-		return errors.New("id is not valid")
+		return errors.New("post id is not valid")
 	}
 
 	if r.posts[id-1].ID != id {
 		return errors.New("post not found")
+	}
+
+	if _, ok := r.users[username]; !ok {
+		return errors.New("user not found")
+	}
+
+	if slices.Contains(r.posts[id-1].Likes, username) {
+		return errors.New("user already liked this post")
 	}
 
 	post := r.posts[id-1]

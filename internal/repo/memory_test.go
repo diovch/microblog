@@ -42,7 +42,6 @@ func BenchmarkCreateUser(b *testing.B) {
 	}
 }
 
-
 func TestCreatePost(t *testing.T) {
 	repo := NewMemoryRepo()
 	username := "testuser"
@@ -89,5 +88,62 @@ func BenchmarkCreatePost(b *testing.B) {
 
 	if len(repo.posts) != b.N || repo.nextPostID != int64(b.N) {
 		b.Errorf("expected %d posts, got %d", b.N, len(repo.posts))
+	}
+}
+
+func TestLikePost(t *testing.T) {
+	repo := NewMemoryRepo()
+	username := "testuser"
+	err := repo.CreateUser(username)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	content := "Hello, world!"
+	postID, err := repo.CreatePost(content, username)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	err = repo.LikePost(postID, username)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	post := repo.posts[0]
+	if len(post.Likes) != 1 || post.Likes[0] != username {
+		t.Errorf("expected likes to contain %s, got %+v", username, post.Likes)
+	}
+}
+
+func BenchmarkLikePost(b *testing.B) {
+	repo := NewMemoryRepo()
+	username := "testuser"
+	err := repo.CreateUser(username)
+	if err != nil {
+		b.Fatalf("expected no error, got %v", err)
+	}
+
+	content := "Hello, world!"
+	postID, err := repo.CreatePost(content, username)
+	if err != nil {
+		b.Fatalf("expected no error, got %v", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		newUserName := username + strconv.Itoa(i)
+		err := repo.CreateUser(newUserName)
+		if err != nil {
+			b.Fatalf("expected no error, got %v", err)
+		}
+		err = repo.LikePost(postID, username+strconv.Itoa(i))
+		if err != nil {
+			b.Fatalf("expected no error, got %v", err)
+		}
+	}
+
+	post := repo.posts[0]
+	if len(post.Likes) != b.N {
+		b.Errorf("expected %d likes, got %d", b.N, len(post.Likes))
 	}
 }
