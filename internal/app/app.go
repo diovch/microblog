@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -37,7 +38,7 @@ func Run(cfg *config.Config) {
 
 	// FAQ: Should httpServer be in other package?
 	srv := &http.Server{
-		Addr:    ":" + string(rune(cfg.HTTP.Port)),
+		Addr:    ":" + strconv.Itoa(cfg.HTTP.Port),
 		Handler: r,
 	}
 
