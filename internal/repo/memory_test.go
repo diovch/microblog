@@ -41,3 +41,53 @@ func BenchmarkCreateUser(b *testing.B) {
 		b.Errorf("expected %d users, got %d", b.N, len(repo.users))
 	}
 }
+
+
+func TestCreatePost(t *testing.T) {
+	repo := NewMemoryRepo()
+	username := "testuser"
+	err := repo.CreateUser(username)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	content := "Hello, world!"
+	postID, err := repo.CreatePost(content, username)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if postID != 1 {
+		t.Errorf("expected post ID 1, got %d", postID)
+	}
+
+	if len(repo.posts) != 1 {
+		t.Fatalf("expected 1 post, got %d", len(repo.posts))
+	}
+
+	post := repo.posts[0]
+	if post.ID != postID || post.Text != content || post.AuthorUsername != username {
+		t.Errorf("post data mismatch: got %+v", post)
+	}
+}
+
+func BenchmarkCreatePost(b *testing.B) {
+	repo := NewMemoryRepo()
+	username := "testuser"
+	err := repo.CreateUser(username)
+	if err != nil {
+		b.Fatalf("expected no error, got %v", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		content := "Post number " + strconv.Itoa(i)
+		_, err := repo.CreatePost(content, username)
+		if err != nil {
+			b.Fatalf("expected no error, got %v", err)
+		}
+	}
+
+	if len(repo.posts) != b.N || repo.nextPostID != int64(b.N) {
+		b.Errorf("expected %d posts, got %d", b.N, len(repo.posts))
+	}
+}
