@@ -3,12 +3,11 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
-	"syscall"
+	"sync"
 	"time"
 
 	"github.com/diovch/microblog/config"
@@ -42,25 +41,33 @@ func Run(cfg *config.Config) {
 		Handler: r,
 	}
 
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		l.LogInfo(fmt.Sprint("Starting server on port ", cfg.HTTP.Port))
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Server failed: %v", err)
+			l.LogError("Server failed: " + err.Error())
 		}
 	}()
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(interrupt, os.Interrupt)
 
+	l.LogInfo("Press Ctrl+C to stop the server")
 	<-interrupt
+	l.LogInfo("Received interrupt signal")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// Shutdown
 
+	l.LogInfo("Shutting down server...")
 	if err := srv.Shutdown(ctx); err != nil {
 		l.LogError(fmt.Sprint("app - Run - httpServer.Shutdown: %w", err))
 	}
 	l.LogInfo("Shutting down gracefully")
+
+	wg.Wait()
 }
