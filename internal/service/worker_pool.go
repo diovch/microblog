@@ -23,7 +23,7 @@ func NewWorkerPool() *WorkerPool {
 }
 
 func (w *WorkerPool) RunAsync(task func()) {
-	w.tasks <- task
+	w.tasks <- task // FAQ: blocks if no workers are available
 }
 
 func (w *WorkerPool) Close() {
