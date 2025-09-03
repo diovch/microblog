@@ -25,3 +25,7 @@ func NewWorkerPool() *WorkerPool {
 func (w *WorkerPool) RunAsync(task func()) {
 	w.tasks <- task
 }
+
+func (w *WorkerPool) Close() {
+	close(w.tasks)
+}

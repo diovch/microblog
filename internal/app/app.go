@@ -23,9 +23,11 @@ func Run(cfg *config.Config) {
 	defer l.Close()
 
 	memDb := repo.NewMemoryRepo()
+	wp := service.NewWorkerPool()
+	defer wp.Close()
 
 	userHandler := handlers.NewUserHandler(memDb, l)
-	postHandler := handlers.NewPostHandler(memDb, service.NewWorkerPool(), l)
+	postHandler := handlers.NewPostHandler(memDb, wp, l)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/register", userHandler.RegisterHandler).Methods(http.MethodPost)
